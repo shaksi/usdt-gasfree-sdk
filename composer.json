@@ -1,0 +1,19 @@
+{
+  "name": "shaksi/usdt-gasfree-sdk",
+  "description": "GasFree TRC-20 standalone PHP client with local signing server",
+  "type": "project",
+  "require": {
+    "guzzlehttp/guzzle": "^7.0",
+    "vlucas/phpdotenv": "^5.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "GasFree\\": "src/"
+    }
+  },
+  "scripts": {
+    "start": "php run.php"
+  },
+  "minimum-stability": "stable",
+  "license": "MIT"
+}
