@@ -1,4 +1,4 @@
-# GasFree PHP Client with Local Signing Server
+# USDT GasFree on Tron - PHP Client with Local Signing Server
 
 This project provides a standalone PHP client to perform TRC-20 gasless transfers via the GasFree API: https://open.gasfree.io. It includes:
 
