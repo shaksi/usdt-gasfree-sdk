@@ -57,7 +57,7 @@ The documentation can also be found here: https://gasfree.io/docs/GasFree_specif
 
 ---
 
-## 4. Project Structure
+## 3. Project Structure
 
 ```txt
 gasfree-client/
@@ -73,7 +73,7 @@ gasfree-client/
 
 ---
 
-## 5. Usage: CLI Transfer (run.php)
+## 4. Usage: CLI Transfer (run.php)
 
 Use the CLI script to send gasless transfers:
 
