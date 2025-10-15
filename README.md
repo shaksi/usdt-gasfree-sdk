@@ -1,109 +1,85 @@
-# USDT GasFree on Tron - PHP Client with Local Signing Server
+# USDT GasFree on Tron - Node.js API
 
-This project provides a standalone PHP client to perform TRC-20 gasless transfers via the GasFree API: https://open.gasfree.io. It includes:
+This project exposes a lightweight Node.js REST API that wraps the [GasFree](https://gasfree.io/) endpoints for TRC-20 gasless transfers. It borrows ideas from the official [gasfree-sdk-js](https://github.com/gasfreeio/gasfree-sdk-js) package but keeps everything in a single Express server, including local signing with your private key.
 
-- A PHP client
-- A secure Node.js signing server to protect your private key
-- Environment-based config with multi-network support testnet & mainnet
-- CLI utility for transfers
+## ✨ Features
 
----
+- Express API with JSON responses
+- Fetches GasFree configuration (supported tokens, service providers)
+- Retrieves account information and transfer status
+- Creates and signs gasless transfer payloads locally via TronWeb
+- Supports dry-run payload previews before broadcasting
 
-## 📦 Requirements
+## 🧰 Requirements
 
-- PHP 7.4+
-- Composer
-- Node.js 16+
-- NPM
+- Node.js 18+
+- npm
 
----
+## 🚀 Getting Started
 
-## 1. Installation
+1. Install dependencies:
 
-1. Clone or unzip this repo
+   ```bash
+   npm install
+   ```
 
-```bash
-git clone git@github.com:shaksi/usdt-gasfree-sdk.git
-cd usdt-gasfree-sdk
-```
+2. Copy the example environment file and fill in your credentials:
 
-2. Install PHP dependencies
+   ```bash
+   cp example.env .env
+   # edit .env with your GasFree credentials and Tron private key
+   ```
 
-```bash
-composer install
-```
+3. Start the API server:
 
-3. Install Node.js dependencies
+   ```bash
+   npm start
+   ```
 
-```bash
-npm install
-```
+   The server listens on `http://127.0.0.1:4000` by default.
 
-4. Copy `.env.example` to `.env` and fill in your credentials:
+## 🔐 Environment Variables
 
-```bash
-cp .env.example .env
-```
+| Variable | Description |
+| --- | --- |
+| `GASFREE_NETWORK` | Network to use: `testnet` or `mainnet`. |
+| `GASFREE_TESTNET_API_KEY` / `GASFREE_TESTNET_API_SECRET` | GasFree API credentials for testnet. |
+| `GASFREE_MAINNET_API_KEY` / `GASFREE_MAINNET_API_SECRET` | GasFree API credentials for mainnet. |
+| `GASFREE_ADDRESS` | Tron address that owns the USDT balance. |
+| `GASFREE_PRIVATE_KEY` | Private key corresponding to `GASFREE_ADDRESS`. It never leaves the server. |
+| `PORT` | HTTP port for the Express server (defaults to `4000`). |
 
-5. Ensure the signing server is running see next step.
+## 📡 API Endpoints
 
----
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/health` | Basic readiness probe. |
+| `GET` | `/api/tokens` | List supported TRC-20 tokens. |
+| `GET` | `/api/providers` | List GasFree service providers. |
+| `GET` | `/api/account/:address?` | Fetch GasFree account metadata (defaults to the configured address). |
+| `GET` | `/api/transfer/:traceId` | Retrieve the status for a submitted transfer trace ID. |
+| `POST` | `/api/transfer` | Submit a new gasless transfer. Supports `{ dryRun: true }` to preview. |
 
-## 2. .env Configuration
-
-If you dont have gassfree credentials, you can request them from here: https://docs.google.com/forms/d/e/1FAIpQLSc5EB1X8JN7LA4SAVAG99VziXEY6Kv6JxmlBry9rUBlwI-GaQ/viewform (it took 3wks to get access response)
-
-The documentation can also be found here: https://gasfree.io/docs/GasFree_specification.html
-
----
-
-## 3. Project Structure
-
-```txt
-gasfree-client/
-├── src/
-│   └── GasFreeService.php         # PHP SDK client
-├── sign-server.js                 # Local signing server
-├── run.php                        # CLI entry
-├── .env                           # Your secrets (not committed)
-├── composer.json
-├── package.json
-└── README.md                      # This file
-```
-
----
-
-## 4. Usage: CLI Transfer (run.php)
-
-Use the CLI script to send gasless transfers:
+### Example transfer request
 
 ```bash
-php run.php –receiver=TXYZ… –amount=5 [–dry-run]
+curl -X POST http://127.0.0.1:4000/api/transfer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "receiver": "TXYZ...",
+    "amount": 5,
+    "dryRun": true
+  }'
 ```
 
-- `–receiver` — TRON address to send to
-- `–amount` — Amount in USDT
-- `–dry-run` — Simulate without sending
+The response will contain the payload, and when `dryRun` is `false` it will also include the GasFree submission result.
 
-Examples
+## 🧪 Development Tips
 
-```bash
-# Dry run
-php run.php –receiver=TXYZ123… –amount=1 –dry-run
+- The signing flow validates that your configured private key belongs to `GASFREE_ADDRESS` before broadcasting.
+- Use the dry-run flag to inspect the payload without sending it to GasFree.
+- If you need additional endpoints, start from `src/server.js` and `src/gasfreeClient.js`.
 
-# Live transfer
-php run.php –receiver=TXYZ123… –amount=1
-```
+## 📄 License
 
----
-
-## ✅ Next Steps
-
-- Add transaction status checker
-- Dockerize client & signer and turn into API
-
----
-
-## 👨‍💻 Author
-
-Built by [@Shaksi]https://github.com/Shaksi
+MIT
