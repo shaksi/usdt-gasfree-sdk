@@ -69,8 +69,37 @@ class GasFreeClient {
       const { data } = await this.http.request(config);
       return data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Unknown error';
-      throw new Error(`GasFree API request failed: ${message}`);
+      const status = error.response?.status;
+      const code = error.code;
+      let message = error.response?.data?.message;
+
+      if (!message) {
+        const data = error.response?.data;
+        if (typeof data === 'string') {
+          message = data;
+        } else if (data) {
+          try {
+            message = JSON.stringify(data);
+          } catch (stringifyError) {
+            message = 'Unknown response body';
+          }
+        }
+      }
+
+      if (!message) {
+        message = error.message || 'Unknown error';
+      }
+
+      const parts = ['GasFree API request failed'];
+      if (status) {
+        parts.push(`status ${status}`);
+      }
+      if (code) {
+        parts.push(`code ${code}`);
+      }
+      parts.push(`message: ${message}`);
+
+      throw new Error(parts.join(' - '));
     }
   }
 
