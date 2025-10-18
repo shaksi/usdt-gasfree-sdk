@@ -8,11 +8,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(requestIp.mw());
 
-const PRIVATE_KEY = process.env.GASFREE_PRIVATE_KEY;
-if (!PRIVATE_KEY) {
-  console.error("Missing GASFREE_PRIVATE_KEY in .env file");
-  process.exit(1);
-}
+const DEFAULT_PRIVATE_KEY = process.env.GASFREE_PRIVATE_KEY || null;
 
 const ALLOWED_IPS = ["::1", "127.0.0.1", "::ffff:127.0.0.1"];
 
@@ -51,9 +47,15 @@ app.use((req, res, next) => {
 });
 
 app.post("/sign", async (req, res) => {
-  const { message, network = process.env.GASFREE_NETWORK || "mainnet", contract, chainId } = req.body;
+  const { message, privateKey, network = process.env.GASFREE_NETWORK || "mainnet", contract, chainId } =
+    req.body || {};
 
   if (!message) return res.status(400).json({ error: "Message is required" });
+
+  const signingKey = privateKey || DEFAULT_PRIVATE_KEY;
+  if (!signingKey) {
+    return res.status(400).json({ error: "Private key is required" });
+  }
 
   const validationError = validateMessage(message);
   if (validationError) return res.status(400).json({ error: validationError });
@@ -81,10 +83,10 @@ app.post("/sign", async (req, res) => {
     ],
   };
 
-  const tronWeb = new TronWeb({ fullHost: config.host, privateKey: PRIVATE_KEY });
+  const tronWeb = new TronWeb({ fullHost: config.host, privateKey: signingKey });
 
   try {
-    const derived = tronWeb.address.fromPrivateKey(PRIVATE_KEY);
+    const derived = tronWeb.address.fromPrivateKey(signingKey);
     if (derived !== message.user) {
       return res.status(400).json({
         error: "Private key does not match 'user' address.",
@@ -93,7 +95,7 @@ app.post("/sign", async (req, res) => {
       });
     }
 
-    const signature = await tronWeb.trx._signTypedData(domain, types, message, PRIVATE_KEY);
+    const signature = await tronWeb.trx._signTypedData(domain, types, message, signingKey);
     const sig = signature.replace(/^0x/, "");
 
     if (sig.length !== 130) return res.status(500).json({ error: "Malformed signature" });
@@ -102,6 +104,21 @@ app.post("/sign", async (req, res) => {
   } catch (e) {
     console.error("Signing error:", e);
     return res.status(500).json({ error: "Signing failed", details: e.message });
+  }
+});
+
+app.post("/accounts/new", async (req, res) => {
+  const { network = process.env.GASFREE_NETWORK || "mainnet" } = req.body || {};
+
+  const config = chainMap[network] || chainMap.mainnet;
+  const tronWeb = new TronWeb({ fullHost: config.host });
+
+  try {
+    const account = await tronWeb.createAccount();
+    return res.json(account);
+  } catch (e) {
+    console.error("Account generation error:", e);
+    return res.status(500).json({ error: "Account generation failed", details: e.message });
   }
 });
 
